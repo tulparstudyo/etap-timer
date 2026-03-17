@@ -5,6 +5,7 @@
 CONFIG_DIR="$HOME/.config/tulpar"
 REMAINING_FILE="$CONFIG_DIR/.remaining"
 OVERLAY_LOCK="/tmp/tulpar-overlay-$USER.lock"
+UPDATE_INTERVAL=5
 
 # Single instance kontrolü
 if [ -f "$OVERLAY_LOCK" ]; then
@@ -16,51 +17,54 @@ if [ -f "$OVERLAY_LOCK" ]; then
 fi
 
 echo $$ > "$OVERLAY_LOCK"
-trap 'rm -f "$OVERLAY_LOCK"; exit 0' EXIT INT TERM
 
 # yad yoksa çık
 if ! command -v yad &>/dev/null; then
+    rm -f "$OVERLAY_LOCK"
     exit 1
 fi
 
-PIPE="$CONFIG_DIR/.overlay_pipe"
-rm -f "$PIPE"
-mkfifo "$PIPE"
-
-# yad text-info penceresi — şeffaf, her zaman üstte, sağ alt köşede
-tail -f "$PIPE" | yad --text-info \
-    --title="" \
-    --no-buttons \
-    --undecorated \
-    --skip-taskbar \
-    --on-top \
-    --sticky \
-    --geometry=220x40-20-40 \
-    --fore="#FFFFFF" \
-    --back="#333333" \
-    --fontname="Sans Bold 13" \
-    --tail \
-    --no-focus &
-
-YAD_PID=$!
+YAD_PID=""
 
 cleanup() {
-    kill "$YAD_PID" 2>/dev/null
-    wait "$YAD_PID" 2>/dev/null
-    rm -f "$PIPE" "$OVERLAY_LOCK"
+    [ -n "$YAD_PID" ] && kill "$YAD_PID" 2>/dev/null
+    rm -f "$OVERLAY_LOCK"
     exit 0
 }
 trap cleanup EXIT INT TERM
 
-sleep 1
-
-while kill -0 "$YAD_PID" 2>/dev/null; do
+while true; do
     if [ -f "$REMAINING_FILE" ]; then
         text=$(cat "$REMAINING_FILE" 2>/dev/null)
     else
         text="Tulpar bekleniyor..."
     fi
-    # Satırı temizleyip yeniden yaz
-    echo -e "\f$text" > "$PIPE" 2>/dev/null || break
-    sleep 5
+
+    # Eski yad penceresini kapat
+    if [ -n "$YAD_PID" ] && kill -0 "$YAD_PID" 2>/dev/null; then
+        kill "$YAD_PID" 2>/dev/null
+        wait "$YAD_PID" 2>/dev/null
+    fi
+
+    # Yeni yad penceresi aç
+    yad --fixed \
+        --text="$text" \
+        --no-buttons \
+        --undecorated \
+        --skip-taskbar \
+        --on-top \
+        --sticky \
+        --close-on-unfocus=false \
+        --no-focus \
+        --geometry=+20+20 \
+        --borders=8 \
+        --text-align=center \
+        --fore="#FFFFFF" \
+        --back="#222222" \
+        --fontname="Sans Bold 13" \
+        --timeout="$((UPDATE_INTERVAL + 2))" \
+        --timeout-indicator=none &
+    YAD_PID=$!
+
+    sleep "$UPDATE_INTERVAL"
 done

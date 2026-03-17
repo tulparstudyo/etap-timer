@@ -9,11 +9,13 @@ import sys
 import json
 import time
 
-STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".lock_state.json")
+STATE_DIR = os.path.join(os.path.expanduser("~"), ".local", "share", "tulpar-kilit")
+STATE_FILE = os.path.join(STATE_DIR, ".lock_state.json")
 
 
 def read_remaining():
     """State dosyasından kalan süreyi saniye olarak döndürür. None = bilgi yok veya kilitli."""
+    
     try:
         fd = os.open(STATE_FILE, os.O_RDONLY)
         try:

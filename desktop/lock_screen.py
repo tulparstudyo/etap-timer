@@ -288,7 +288,9 @@ class LockScreen(Gtk.Window):
     def _write_state(self, locked, duration_minutes=None):
         """Kilit durumunu state dosyasına yaz (launcher okur)."""
         import json, time, os
-        state_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".lock_state.json")
+        state_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "tulpar-kilit")
+        os.makedirs(state_dir, exist_ok=True)
+        state_path = os.path.join(state_dir, ".lock_state.json")
         try:
             if locked:
                 data = {"locked": True}

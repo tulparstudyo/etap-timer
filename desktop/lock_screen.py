@@ -301,8 +301,10 @@ class LockScreen(Gtk.Window):
                 }
             with open(state_path, "w") as f:
                 json.dump(data, f)
-        except Exception:
-            pass
+                f.flush()
+                os.fsync(f.fileno())
+        except Exception as e:
+            print(f"[WARN] State dosyası yazılamadı: {state_path} — {e}")
 
     def unlock_screen(self, duration_minutes):
         self._polling_active = False

@@ -15,8 +15,12 @@ STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".lock_sta
 def read_remaining():
     """State dosyasından kalan süreyi saniye olarak döndürür. None = bilgi yok veya kilitli."""
     try:
-        with open(STATE_FILE) as f:
-            data = json.load(f)
+        fd = os.open(STATE_FILE, os.O_RDONLY)
+        try:
+            raw = os.read(fd, 4096).decode('utf-8')
+        finally:
+            os.close(fd)
+        data = json.loads(raw)
         if data.get("locked", True):
             return None
         unlock_time = data.get("unlock_time", 0)

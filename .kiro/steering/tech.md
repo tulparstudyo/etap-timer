@@ -1,90 +1,40 @@
-# Technology Stack
+---
+inclusion: always
+---
 
-## Backend
-- **Runtime**: Node.js 16+
-- **Framework**: Express.js
-- **Authentication**: JWT (jsonwebtoken), bcryptjs
-- **Database**: MySQL (mysql2/promise) — AWS RDS
-- **Email**: Nodemailer (SMTP — Brevo relay)
-- **UUID**: uuid library (QR session IDs)
-- **CORS**: cors middleware
-- **Environment**: dotenv for configuration
+# Tulpar - Teknoloji ve Geliştirme Kuralları
 
-## Frontend
-- **Stack**: Vanilla HTML/CSS/JavaScript
-- **No build system**: Static files served by Express from `backend/public/`
-- **No separate frontend server**: Express handles everything
-- **QR Scanning**: Browser-based (unlock.html)
+## Platform
 
-## Desktop Application
-- **Language**: Python 3.8+
-- **GUI**: GTK 3 with PyGObject
-- **HTTP Client**: requests library
-- **QR Generation**: qrcode[pil] library
-- **Platform**: Pardus Linux
+- Hedef işletim sistemi: Pardus Linux (Debian tabanlı)
+- Masaüstü ortamı: XFCE (Pardus varsayılanı)
 
-## Data Storage
-- **Database**: MySQL (AWS RDS — eu-central-1)
-- **Tables**: `institutions`, `users`
-- **QR Sessions**: In-memory Map (server.js)
-- **Migration**: Auto-create tables on startup (`helper.js`)
+## Teknoloji Seçimleri
 
-## Common Commands
+- Dil: Bash script (ana mantık ve servis yönetimi)
+- Ayarlar arayüzü: Zenity (GTK tabanlı diyalog pencereleri)
+- Zamanlayıcı: systemd timer veya cron
+- Idle algılama: xprintidle
+- Oturum yönetimi: xfce4-session-logout, loginctl
+- Kapatma: systemctl poweroff
 
-### Backend
-```bash
-cd backend
-npm install          # Install dependencies
-npm start           # Start production server (port 3000)
-npm run dev         # Start with nodemon (auto-reload)
-```
+## Konfigürasyon
 
-### Desktop
-```bash
-cd desktop
-pip install -r requirements.txt    # Install dependencies
-python3 tulpar_lock.py            # Run lock application
-python3 tulpar_launcher.py        # Run launcher window
-```
+- Ayarlar dosyası: `~/.config/tulpar/tulpar.conf`
+- Format: Bash source edilebilir key=value çiftleri
+- Varsayılan değerler scriptte tanımlı olmalı, conf dosyası yoksa oluşturulmalı
 
-### Full System
-```bash
-./install.sh    # One-time setup (installs all dependencies)
-./start.sh      # Start all services (backend + desktop)
-./start-backend.sh   # Start only backend
-./start-desktop.sh   # Start only desktop
-```
+## Kodlama Kuralları
 
-### Data Import
-```bash
-cd backend
-node import-json.js ../kurumlar.json   # Import institutions from JSON
-```
+- Tüm scriptler `#!/bin/bash` shebang ile başlamalı
+- Değişken isimleri UPPER_SNAKE_CASE (ayarlar) ve lower_snake_case (yerel değişkenler)
+- Hata durumları loglanmalı: `~/.config/tulpar/tulpar.log`
+- Single instance kontrolü: lock dosyası veya `pgrep` ile sağlanmalı
+- Scriptler POSIX uyumluluğa yakın tutulmalı, bash-specific özellikler gerektiğinde kullanılabilir
 
-## Environment Configuration
+## Kurulum
 
-### Backend (`backend/.env`)
-- `PORT`: API server port (default: 3000)
-- `JWT_SECRET`: Token encryption key
-- `OFFLINE_SECRET`: Offline unlock HMAC key
-- `ADMIN_SECRET`: Admin login secret
-- `APP_VERSION`: Application version
-- `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT`: MySQL connection
-- `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `SMTP_PORT`, `SMTP_SENDER`: Email config
-- `EMAIL_TO`: Admin notification email
-
-### Desktop (`desktop/.env`)
-- `API_URL`: Backend API address
-- `INSTITUTION_CODE`: Kurum kodu
-- `OFFLINE_SECRET`: Offline unlock secret (must match backend)
-- `INSTITUTION_NAME`: Kurum adi (display)
-- `UNLOCK_DURATION`: Kilit acma suresi (dakika)
-
-## Security Notes
-- CORS currently allows all origins (restrict in production)
-- JWT tokens expire in 24 hours
-- Three auth levels: user (`authenticate`), institution (`authenticateInstitution`), admin (`authenticateAdmin`)
-- Brute-force protection: login attempt tracking with lockout
-- QR sessions auto-expire and are cleaned up every 60 seconds
-- Offline unlock uses HMAC-SHA256 challenge-response
-- Passwords hashed with bcryptjs
+- Kurulum scripti `install.sh` ile yapılmalı
+- wget ile uzaktan indirme desteklenmeli
+- Autostart için `~/.config/autostart/` altına `.desktop` dosyası oluşturulmalı
+- Masaüstü kısayolu için `~/Masaüstü/` veya `~/Desktop/` altına `.desktop` dosyası oluşturulmalı

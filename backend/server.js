@@ -287,6 +287,10 @@ app.post('/unlock', authenticate, async (req, res) => {
     }
 
     session.unlocked = true;
+
+    // Unlock sonrası session'ı 5 saniye sonra sil (desktop polling'in son yanıtı alması için kısa süre bırak)
+    setTimeout(() => qrSessions.delete(sessionId), 5000);
+
     res.json({ unlocked: true, message: 'Kilit açıldı' });
   } catch (err) {
     console.error(err);

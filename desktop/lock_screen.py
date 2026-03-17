@@ -278,16 +278,18 @@ class LockScreen(Gtk.Window):
 
     def _check_status_thread(self):
         try:
+            if not self._polling_active:
+                return
             response = requests.get(f"{self.api_url}/lock/status/{self.session_id}", timeout=2)
             result = response.json()
-            if result.get('unlocked'):
+            if result.get('unlocked') and self._polling_active:
                 GLib.idle_add(self.unlock_screen, self.unlock_duration)
         except:
             pass
 
     def _write_state(self, locked, duration_minutes=None):
         """Kilit durumunu state dosyasına yaz (launcher okur)."""
-        import json, time, os
+        import json, os
         state_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "tulpar-kilit")
         os.makedirs(state_dir, exist_ok=True)
         state_path = os.path.join(state_dir, ".lock_state.json")
@@ -295,11 +297,10 @@ class LockScreen(Gtk.Window):
             if locked:
                 data = {"locked": True}
             else:
-                dur = duration_minutes if duration_minutes is not None else self.unlock_duration
                 data = {
                     "locked": False,
-                    "unlock_time": time.time(),
-                    "duration_minutes": dur,
+                    "unlock_time": self._unlock_time,
+                    "duration_minutes": duration_minutes if duration_minutes is not None else self.unlock_duration,
                 }
             with open(state_path, "w") as f:
                 json.dump(data, f)
@@ -309,17 +310,40 @@ class LockScreen(Gtk.Window):
             print(f"[WARN] State dosyası yazılamadı: {state_path} — {e}")
 
     def unlock_screen(self, duration_minutes):
+        # Zaten unlock durumundaysa tekrar çağrılmasını engelle
+        if not self._polling_active:
+            return False
         self._polling_active = False
+        self.session_id = None
         if self._qr_refresh_timer_id is not None:
             GLib.source_remove(self._qr_refresh_timer_id)
             self._qr_refresh_timer_id = None
+        if self._relock_timer_id is not None:
+            GLib.source_remove(self._relock_timer_id)
+            self._relock_timer_id = None
         self._release_grabs()
         self.hide()
+
+        # Süre hesaplaması tamamen desktop'ta: wall-clock tabanlı
+        import time
+        self._unlock_time = time.time()
+        self._unlock_duration_sec = duration_minutes * 60
+
         self._write_state(locked=False, duration_minutes=duration_minutes)
-        self._relock_timer_id = GLib.timeout_add_seconds(
-            duration_minutes * 60, self.lock_screen
-        )
+
+        # Her saniye kalan süreyi kontrol et (suspend/resume'a dayanıklı)
+        self._relock_timer_id = GLib.timeout_add_seconds(1, self._check_relock)
         return False
+
+    def _check_relock(self):
+        """Wall-clock tabanlı süre kontrolü — GLib timer kaymasından etkilenmez."""
+        import time
+        elapsed = time.time() - self._unlock_time
+        if elapsed >= self._unlock_duration_sec:
+            self._relock_timer_id = None
+            self.lock_screen()
+            return False  # Timer'ı durdur
+        return True  # Kontrol etmeye devam et
 
     def lock_screen(self):
         self._relock_timer_id = None

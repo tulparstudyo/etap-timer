@@ -30,7 +30,9 @@ if [ -d "$INSTALL_DIR" ]; then
     sudo rm -rf "$INSTALL_DIR"
 fi
 
-# Autostart dosyasını kaldır
+# Autostart dosyasını kaldır (sistem geneli)
+sudo rm -f /etc/xdg/autostart/tulpar-daemon.desktop
+# Eski kullanıcı bazlı autostart dosyasını da temizle (varsa)
 rm -f "$AUTOSTART_DIR/tulpar-daemon.desktop"
 
 # Masaüstü kısayolunu kaldır

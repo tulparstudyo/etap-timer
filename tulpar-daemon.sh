@@ -6,6 +6,7 @@ CONFIG_DIR="$HOME/.config/tulpar"
 CONFIG_FILE="$CONFIG_DIR/tulpar.conf"
 LOG_FILE="$CONFIG_DIR/tulpar.log"
 LOCK_FILE="/tmp/tulpar-daemon-$USER.lock"
+SESSION_START_FILE="$CONFIG_DIR/.session_start"
 
 # Varsayılan değerler
 DEFAULT_SESSION_DURATION=60
@@ -52,6 +53,7 @@ log_msg "Tulpar daemon başlatıldı. SESSION=$SESSION_DURATION dk, IDLE=$IDLE_D
 
 # Oturum başlangıç zamanı
 session_start=$(date +%s)
+echo "$session_start" > "$SESSION_START_FILE"
 
 while true; do
     load_config

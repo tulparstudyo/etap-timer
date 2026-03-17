@@ -32,9 +32,28 @@ SESSION_DURATION="${SESSION_DURATION:-$DEFAULT_SESSION_DURATION}"
 IDLE_DURATION="${IDLE_DURATION:-$DEFAULT_IDLE_DURATION}"
 TURNOFF_TIME="${TURNOFF_TIME:-$DEFAULT_TURNOFF_TIME}"
 
+# Kalan süre bilgisini hesapla
+remaining_text=""
+SESSION_START_FILE="$CONFIG_DIR/.session_start"
+LOCK_FILE="/tmp/tulpar-daemon-$USER.lock"
+
+if [ -f "$LOCK_FILE" ] && [ -f "$SESSION_START_FILE" ]; then
+    daemon_pid=$(cat "$LOCK_FILE")
+    if kill -0 "$daemon_pid" 2>/dev/null; then
+        session_start=$(cat "$SESSION_START_FILE")
+        now=$(date +%s)
+        elapsed_min=$(( (now - session_start) / 60 ))
+        remaining_min=$(( SESSION_DURATION - elapsed_min ))
+        if [ "$remaining_min" -lt 0 ]; then
+            remaining_min=0
+        fi
+        remaining_text="\n\n⏱ Mevcut oturum kalan süre: ${remaining_min} dakika (toplam ${SESSION_DURATION} dk)"
+    fi
+fi
+
 # Zenity form ile ayarları göster
 result=$(zenity --forms --title="Tulpar Ayarları" \
-    --text="Oturum ve kapatma ayarlarını düzenleyin" \
+    --text="Oturum ve kapatma ayarlarını düzenleyin${remaining_text}" \
     --add-entry="Oturum Süresi (dakika): [$SESSION_DURATION]" \
     --add-entry="Boşta Kalma Süresi (dakika): [$IDLE_DURATION]" \
     --add-entry="Otomatik Kapanma Saati (HH:MM): [$TURNOFF_TIME]" \

@@ -6,7 +6,6 @@ set -e
 REPO_BASE="https://raw.githubusercontent.com/tulparstudyo/etap-timer/main"
 INSTALL_DIR="/opt/tulpar"
 CONFIG_DIR="$HOME/.config/tulpar"
-AUTOSTART_DIR="$HOME/.config/autostart"
 TMP_DIR=$(mktemp -d)
 
 # Temizlik fonksiyonu
@@ -76,9 +75,9 @@ fi
 # Kurulumu yapan kullanıcıyı kaydet
 echo "$USER" > "$CONFIG_DIR/.install_user"
 
-# Autostart dosyasını kopyala
-mkdir -p "$AUTOSTART_DIR"
-cp "$TMP_DIR/tulpar-daemon.desktop" "$AUTOSTART_DIR/"
+# Autostart dosyasını tüm kullanıcılar için /etc/xdg/autostart/ altına kopyala
+echo "Autostart ayarlanıyor (tüm kullanıcılar)..."
+sudo cp "$TMP_DIR/tulpar-daemon.desktop" /etc/xdg/autostart/tulpar-daemon.desktop
 
 # Masaüstü kısayolunu oluştur
 cp "$TMP_DIR/tulpar-settings.desktop" "$DESKTOP_DIR/"

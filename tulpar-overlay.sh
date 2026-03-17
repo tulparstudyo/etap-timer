@@ -2,12 +2,14 @@
 # Tulpar - Masaüstü Sayaç Overlay
 # Kalan süreyi masaüstünde gösterir
 # Pencere fare ile taşınabilir (Alt+Sol Tık veya sürükle), konum hatırlanır
+# yad --multi-progress + named pipe ile pencere kapanmadan güncellenir
 
 CONFIG_DIR="$HOME/.config/tulpar"
 REMAINING_FILE="$CONFIG_DIR/.remaining"
 OVERLAY_LOCK="/tmp/tulpar-overlay-$USER.lock"
 DAEMON_LOCK="/tmp/tulpar-daemon-$USER.lock"
 POSITION_FILE="$CONFIG_DIR/.overlay_position"
+FIFO_FILE="/tmp/tulpar-overlay-fifo-$USER"
 UPDATE_INTERVAL=5
 
 # Single instance kontrolü
@@ -33,7 +35,7 @@ YAD_WID=""
 cleanup() {
     save_position
     [ -n "$YAD_PID" ] && kill "$YAD_PID" 2>/dev/null
-    rm -f "$OVERLAY_LOCK"
+    rm -f "$OVERLAY_LOCK" "$FIFO_FILE"
     exit 0
 }
 trap cleanup EXIT INT TERM
@@ -68,39 +70,47 @@ get_geometry() {
     echo "-20-60"
 }
 
-# Pencereyi yeniden aç (aynı konumda)
-open_overlay() {
-    local text="$1"
-    local geometry="$2"
+# Named pipe oluştur
+rm -f "$FIFO_FILE"
+mkfifo "$FIFO_FILE"
 
-    yad --text="$text" \
-        --no-buttons \
-        --undecorated \
-        --skip-taskbar \
-        --on-top \
-        --sticky \
-        --close-on-unfocus=false \
-        --no-focus \
-        --geometry="$geometry" \
-        --borders=8 \
-        --text-align=center \
-        --fore="#FFFFFF" \
-        --back="#222222" \
-        --fontname="Sans Bold 13" \
-        --timeout="$((UPDATE_INTERVAL + 2))" \
-        --timeout-indicator=none &
-    YAD_PID=$!
+# İlk metni belirle
+if [ -f "$REMAINING_FILE" ]; then
+    initial_text=$(cat "$REMAINING_FILE" 2>/dev/null)
+else
+    initial_text="Tulpar bekleniyor..."
+fi
 
-    # Pencere ID'sini yakala
-    YAD_WID=""
-    if command -v xdotool &>/dev/null; then
-        sleep 0.3
-        YAD_WID=$(xdotool search --pid "$YAD_PID" 2>/dev/null | head -1)
-    fi
-}
+geometry=$(get_geometry)
+
+# yad'ı tail ile FIFO'dan besle — pencere kapanmadan metin güncellenir
+tail -f "$FIFO_FILE" | yad --text="$initial_text" \
+    --no-buttons \
+    --undecorated \
+    --skip-taskbar \
+    --on-top \
+    --sticky \
+    --close-on-unfocus=false \
+    --no-focus \
+    --geometry="$geometry" \
+    --borders=8 \
+    --text-align=center \
+    --fore="#FFFFFF" \
+    --back="#222222" \
+    --fontname="Sans Bold 13" \
+    --listen &
+YAD_PID=$!
+
+# Pencere ID'sini yakala
+if command -v xdotool &>/dev/null; then
+    sleep 0.5
+    YAD_WID=$(xdotool search --pid "$YAD_PID" 2>/dev/null | head -1)
+fi
 
 # --- Ana döngü ---
 while true; do
+    sleep "$UPDATE_INTERVAL"
+
     # Daemon çalışmıyorsa overlay'i kapat
     if [ -f "$DAEMON_LOCK" ]; then
         daemon_pid=$(cat "$DAEMON_LOCK")
@@ -111,23 +121,18 @@ while true; do
         break
     fi
 
-    # Gösterilecek metni oku
+    # yad kapandıysa çık
+    if ! kill -0 "$YAD_PID" 2>/dev/null; then
+        break
+    fi
+
+    # Gösterilecek metni oku ve FIFO'ya yaz
     if [ -f "$REMAINING_FILE" ]; then
         text=$(cat "$REMAINING_FILE" 2>/dev/null)
     else
         text="Tulpar bekleniyor..."
     fi
 
-    # Mevcut pencere varsa konumunu kaydet, sonra kapat
-    if [ -n "$YAD_PID" ] && kill -0 "$YAD_PID" 2>/dev/null; then
-        save_position
-        kill "$YAD_PID" 2>/dev/null
-        wait "$YAD_PID" 2>/dev/null
-    fi
-
-    # Kaydedilmiş (veya varsayılan) konumda yeni pencere aç
-    geometry=$(get_geometry)
-    open_overlay "$text" "$geometry"
-
-    sleep "$UPDATE_INTERVAL"
+    # yad --listen modunda "text:YeniMetin" komutu ile güncellenir
+    echo "text:$text" > "$FIFO_FILE"
 done

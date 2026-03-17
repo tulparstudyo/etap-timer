@@ -4,6 +4,7 @@
 
 CONFIG_DIR="$HOME/.config/tulpar"
 CONFIG_FILE="$CONFIG_DIR/tulpar.conf"
+GLOBAL_CONFIG_FILE="/etc/tulpar/tulpar.conf"
 LOG_FILE="$CONFIG_DIR/tulpar.log"
 LOCK_FILE="/tmp/tulpar-daemon-$USER.lock"
 SESSION_START_FILE="$CONFIG_DIR/.session_start"
@@ -67,13 +68,30 @@ if [ -f "$LOCK_FILE" ]; then
     fi
 fi
 
+OVERLAY_LOCK="/tmp/tulpar-overlay-$USER.lock"
+
+stop_overlay() {
+    if [ -f "$OVERLAY_LOCK" ]; then
+        local overlay_pid
+        overlay_pid=$(cat "$OVERLAY_LOCK")
+        if kill -0 "$overlay_pid" 2>/dev/null; then
+            kill "$overlay_pid" 2>/dev/null
+        fi
+    fi
+}
+
 echo $$ > "$LOCK_FILE"
-trap 'rm -f "$LOCK_FILE" "$REMAINING_FILE"; exit 0' EXIT INT TERM
+trap 'stop_overlay; rm -f "$LOCK_FILE" "$REMAINING_FILE"; exit 0' EXIT INT TERM
 
 # Config dizinini oluştur
 mkdir -p "$CONFIG_DIR"
 
 load_config() {
+    # Önce sistem geneli config'i oku (kurulumu yapan kullanıcının ayarları)
+    if [ -f "$GLOBAL_CONFIG_FILE" ]; then
+        source "$GLOBAL_CONFIG_FILE"
+    fi
+    # Kullanıcıya özel config varsa üzerine yaz
     if [ -f "$CONFIG_FILE" ]; then
         source "$CONFIG_FILE"
     fi

@@ -5,6 +5,7 @@
 CONFIG_DIR="$HOME/.config/tulpar"
 REMAINING_FILE="$CONFIG_DIR/.remaining"
 OVERLAY_LOCK="/tmp/tulpar-overlay-$USER.lock"
+DAEMON_LOCK="/tmp/tulpar-daemon-$USER.lock"
 UPDATE_INTERVAL=5
 
 # Single instance kontrolü
@@ -34,6 +35,16 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 while true; do
+    # Daemon çalışmıyorsa overlay'i kapat
+    if [ -f "$DAEMON_LOCK" ]; then
+        daemon_pid=$(cat "$DAEMON_LOCK")
+        if ! kill -0 "$daemon_pid" 2>/dev/null; then
+            break
+        fi
+    else
+        break
+    fi
+
     if [ -f "$REMAINING_FILE" ]; then
         text=$(cat "$REMAINING_FILE" 2>/dev/null)
     else
@@ -56,7 +67,7 @@ while true; do
         --sticky \
         --close-on-unfocus=false \
         --no-focus \
-        --geometry=+20+20 \
+        --geometry=-20-60 \
         --borders=8 \
         --text-align=center \
         --fore="#FFFFFF" \

@@ -30,6 +30,9 @@ if [ -d "$INSTALL_DIR" ]; then
     sudo rm -rf "$INSTALL_DIR"
 fi
 
+# Sistem geneli config'i kaldır
+sudo rm -rf /etc/tulpar
+
 # Autostart dosyasını kaldır (sistem geneli)
 sudo rm -f /etc/xdg/autostart/tulpar-daemon.desktop
 # Eski kullanıcı bazlı autostart dosyasını da temizle (varsa)

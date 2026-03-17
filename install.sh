@@ -78,6 +78,14 @@ EOF
     echo "Varsayılan ayarlar oluşturuldu."
 fi
 
+# Sistem geneli config oluştur (tüm kullanıcılar okuyabilsin)
+sudo mkdir -p /etc/tulpar
+sudo tee /etc/tulpar/tulpar.conf > /dev/null << EOF
+SESSION_DURATION=60
+IDLE_DURATION=10
+TURNOFF_TIME=23:00
+EOF
+
 # Kurulumu yapan kullanıcıyı kaydet
 echo "$USER" > "$CONFIG_DIR/.install_user"
 

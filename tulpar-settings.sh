@@ -4,6 +4,7 @@
 
 CONFIG_DIR="$HOME/.config/tulpar"
 CONFIG_FILE="$CONFIG_DIR/tulpar.conf"
+GLOBAL_CONFIG_FILE="/etc/tulpar/tulpar.conf"
 LOG_FILE="$CONFIG_DIR/tulpar.log"
 
 # Varsayılan değerler
@@ -24,7 +25,10 @@ fi
 # Config dizinini oluştur
 mkdir -p "$CONFIG_DIR"
 
-# Mevcut ayarları oku veya varsayılanları kullan
+# Mevcut ayarları oku: önce global, sonra kullanıcıya özel
+if [ -f "$GLOBAL_CONFIG_FILE" ]; then
+    source "$GLOBAL_CONFIG_FILE"
+fi
 if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 fi
@@ -89,8 +93,16 @@ if ! [[ "$new_turnoff" =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]]; then
     exit 1
 fi
 
-# Ayarları kaydet
+# Ayarları kaydet (kullanıcı config)
 cat > "$CONFIG_FILE" << EOF
+SESSION_DURATION=$new_session
+IDLE_DURATION=$new_idle
+TURNOFF_TIME=$new_turnoff
+EOF
+
+# Sistem geneli config'e de yaz (tüm kullanıcılar okuyabilsin)
+sudo mkdir -p /etc/tulpar 2>/dev/null
+sudo tee "$GLOBAL_CONFIG_FILE" > /dev/null << EOF
 SESSION_DURATION=$new_session
 IDLE_DURATION=$new_idle
 TURNOFF_TIME=$new_turnoff

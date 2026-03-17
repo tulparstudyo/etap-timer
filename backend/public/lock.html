@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tulpar Kilit — Kod Üret</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <div class="card card-wide">
+      <h2>🔑 Çevrimdışı Kilit Açma</h2>
+      <p style="text-align:center;color:var(--gray);margin-bottom:20px">
+        İnternet bağlantısı yoksa kilit ekranındaki 6 haneli kodu girin, unlock key üretin.
+      </p>
+
+      <div class="section">
+        <h3>Challenge Kodu Girin</h3>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input type="text" id="challengeInput" maxlength="6" placeholder="6 haneli kod"
+            style="width:140px;font-size:1.2em;text-align:center;letter-spacing:4px">
+          <button id="generateKeyBtn" class="btn btn-primary">Key Üret</button>
+        </div>
+        <div id="unlockKeyResult" style="margin-top:16px;font-size:1.6em;font-weight:700;letter-spacing:6px;color:var(--teal)"></div>
+      </div>
+
+      <div class="section" style="margin-top:16px">
+        <h3>QR ile Kilit Açmak İçin</h3>
+        <p style="color:var(--gray);font-size:.9em;margin-bottom:12px">
+          Masaüstü uygulamanız kilitlendiğinde QR kodu taratarak açabilirsiniz.
+        </p>
+        <a href="unlock.html" class="btn btn-secondary">🔓 QR Tarat</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="layout.js"></script>
+  <script>
+    const API_URL = `https://${location.hostname}`;
+    const token = sessionStorage.getItem('token');
+    if (!token) location.href = 'login.html';
+
+    document.getElementById('generateKeyBtn').addEventListener('click', async () => {
+      const challengeCode = document.getElementById('challengeInput').value.trim();
+      const result = document.getElementById('unlockKeyResult');
+      if (!/^\d{6}$/.test(challengeCode)) {
+        result.innerHTML = '<span style="font-size:.7em;color:var(--error)">6 haneli sayısal kod girin</span>';
+        return;
+      }
+      try {
+        const res = await fetch(`${API_URL}/offline-unlock-key`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ challengeCode })
+        });
+        const data = await res.json();
+        result.innerHTML = res.ok
+          ? data.unlockKey
+          : `<span style="font-size:.7em;color:var(--error)">${data.error}</span>`;
+      } catch {
+        result.innerHTML = '<span style="font-size:.7em;color:var(--error)">Bağlantı hatası</span>';
+      }
+    });
+  </script>
+</body>
+</html>

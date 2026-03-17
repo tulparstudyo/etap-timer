@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tulpar Kilit — Kayıt</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+  <style>
+    .select2-container { width: 100% !important; }
+    .select2-container--default .select2-selection--single {
+      height: 44px;
+      padding: 6px 10px;
+      border: 1.5px solid var(--gray-l);
+      border-radius: var(--radius);
+      font-size: .95em;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+      line-height: 30px;
+      color: var(--black);
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+      height: 42px;
+    }
+    .select2-container--default.select2-container--focus .select2-selection--single {
+      border-color: var(--teal);
+    }
+    .select2-dropdown { border-color: var(--gray-l); border-radius: var(--radius); }
+    .select2-results__option--highlighted { background-color: var(--teal) !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card">
+      <h2>Kayıt Ol</h2>
+      <form id="registerForm">
+        <input type="email" id="email" placeholder="E-posta" required>
+        <input type="tel" id="phone" placeholder="Telefon" required>
+
+        <select id="il">
+          <option value="">İl seçin...</option>
+        </select>
+        <select id="ilce" disabled>
+          <option value="">Önce il seçin...</option>
+        </select>
+        <select id="institution" disabled>
+          <option value="">Önce il ve ilçe seçin...</option>
+        </select>
+
+        <button type="submit" class="btn btn-primary btn-full">Kayıt Ol</button>
+      </form>
+      <div class="divider">veya</div>
+      <p style="text-align:center;color:var(--gray);font-size:.9em">
+        Hesabınız var mı? <a href="login.html">Giriş Yap</a>
+      </p>
+      <div id="message"></div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="layout.js"></script>
+  <script>
+    const API_URL = `https://${location.hostname}`;
+    const ilSel = document.getElementById('il');
+    const ilceSel = document.getElementById('ilce');
+
+    // İlleri yükle
+    fetch(`${API_URL}/iller`).then(r => r.json()).then(list => {
+      list.forEach(il => {
+        const o = document.createElement('option');
+        o.value = il; o.textContent = il;
+        ilSel.appendChild(o);
+      });
+    });
+
+    // İl değişince ilçeleri yükle
+    ilSel.addEventListener('change', () => {
+      ilceSel.innerHTML = '<option value="">İlçe seçin...</option>';
+      ilceSel.disabled = !ilSel.value;
+      // Kurum seçimini sıfırla
+      $('#institution').val(null).trigger('change');
+      document.getElementById('institution').disabled = true;
+
+      if (!ilSel.value) return;
+      fetch(`${API_URL}/ilceler?il=${encodeURIComponent(ilSel.value)}`)
+        .then(r => r.json())
+        .then(list => {
+          list.forEach(ilce => {
+            const o = document.createElement('option');
+            o.value = ilce; o.textContent = ilce;
+            ilceSel.appendChild(o);
+          });
+        });
+    });
+
+    // İlçe değişince kurum Select2'yi aktifle
+    ilceSel.addEventListener('change', () => {
+      const inst = document.getElementById('institution');
+      $('#institution').val(null).trigger('change');
+      inst.disabled = !ilceSel.value;
+    });
+
+    // Kurum Select2 (server-side, il+ilçe filtreli)
+    $('#institution').select2({
+      placeholder: 'Kurum adı yazın...',
+      minimumInputLength: 0,
+      ajax: {
+        url: `${API_URL}/institutions/search`,
+        dataType: 'json',
+        delay: 300,
+        data: params => ({
+          q: params.term || '',
+          il: ilSel.value,
+          ilce: ilceSel.value,
+          page: params.page || 1
+        }),
+        processResults: data => ({
+          results: data.results,
+          pagination: data.pagination
+        }),
+        cache: true
+      }
+    });
+
+    document.getElementById('registerForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const msg = document.getElementById('message');
+      const institutionId = $('#institution').val();
+      if (!institutionId) {
+        msg.innerHTML = '<div class="msg msg-error">Lütfen kurum seçin</div>';
+        return;
+      }
+      try {
+        const res = await fetch(`${API_URL}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            institutionId
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          msg.innerHTML = '<div class="msg msg-success">Kayıt başarılı! Şifreniz e-posta adresinize gönderildi. <a href="login.html">Giriş yapın</a></div>';
+          document.getElementById('registerForm').reset();
+          $('#institution').val(null).trigger('change');
+          ilceSel.innerHTML = '<option value="">Önce il seçin...</option>';
+          ilceSel.disabled = true;
+          document.getElementById('institution').disabled = true;
+        } else {
+          msg.innerHTML = `<div class="msg msg-error">${data.error}</div>`;
+        }
+      } catch {
+        msg.innerHTML = '<div class="msg msg-error">Bağlantı hatası</div>';
+      }
+    });
+  </script>
+</body>
+</html>

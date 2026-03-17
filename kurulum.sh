@@ -50,19 +50,19 @@ if [ ! -f "$ENV_FILE" ]; then
   echo "⚙️  Yapılandırma ayarları"
   echo "========================"
 
-  read -p "API adresi [https://kilit.dosyamosya.com]: " API_URL
+  read -p "API adresi [https://kilit.dosyamosya.com]: " API_URL < /dev/tty
   API_URL=${API_URL:-https://kilit.dosyamosya.com}
 
-  read -p "Offline secret [tulpar_offline_secret_key]: " OFFLINE_SECRET
+  read -p "Offline secret [tulpar_offline_secret_key]: " OFFLINE_SECRET < /dev/tty
   OFFLINE_SECRET=${OFFLINE_SECRET:-tulpar_offline_secret_key}
 
-  read -p "Kilitsiz kalma süresi (dakika) [40]: " UNLOCK_DURATION
+  read -p "Kilitsiz kalma süresi (dakika) [40]: " UNLOCK_DURATION < /dev/tty
   UNLOCK_DURATION=${UNLOCK_DURATION:-40}
 
-  read -p "Kurum kodu (yöneticinizden alın): " INSTITUTION_CODE
-  read -p "Kurum adı (opsiyonel, boş bırakabilirsiniz): " INSTITUTION_NAME
+  read -p "Kurum kodu (yöneticinizden alın): " INSTITUTION_CODE < /dev/tty
+  read -p "Kurum adı (opsiyonel, boş bırakabilirsiniz): " INSTITUTION_NAME < /dev/tty
 
-  sudo bash -c "cat > '$ENV_FILE'" << ENVEOF
+  sudo tee "$ENV_FILE" > /dev/null << ENVEOF
 API_URL=${API_URL}
 OFFLINE_SECRET=${OFFLINE_SECRET}
 UNLOCK_DURATION=${UNLOCK_DURATION}
@@ -200,7 +200,7 @@ echo "   python3 $INSTALL_DIR/desktop/tulpar_lock.py"
 echo "============================================"
 echo ""
 
-read -p "Uygulamayı şimdi başlatmak ister misiniz? (e/h): " START
+read -p "Uygulamayı şimdi başlatmak ister misiniz? (e/h): " START < /dev/tty
 if [ "$START" = "e" ] || [ "$START" = "E" ]; then
   python3 "$INSTALL_DIR/desktop/tulpar_lock.py"
 fi

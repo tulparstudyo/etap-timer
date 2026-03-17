@@ -3,9 +3,17 @@
 
 set -e
 
+REPO_BASE="https://raw.githubusercontent.com/tulparstudyo/etap-timer/main"
 INSTALL_DIR="/opt/tulpar"
 CONFIG_DIR="$HOME/.config/tulpar"
 AUTOSTART_DIR="$HOME/.config/autostart"
+TMP_DIR=$(mktemp -d)
+
+# Temizlik fonksiyonu
+cleanup() {
+    rm -rf "$TMP_DIR"
+}
+trap cleanup EXIT
 
 # Masaüstü dizinini belirle
 if [ -d "$HOME/Masaüstü" ]; then
@@ -34,13 +42,23 @@ if [ -n "$missing_packages" ]; then
     sudo apt-get install -y $missing_packages
 fi
 
-# Kurulum dizinini oluştur
-echo "Dosyalar kopyalanıyor..."
+# Dosyaları GitHub'dan indir
+echo "Dosyalar indiriliyor..."
+wget -q "$REPO_BASE/tulpar-daemon.sh" -O "$TMP_DIR/tulpar-daemon.sh"
+wget -q "$REPO_BASE/tulpar-settings.sh" -O "$TMP_DIR/tulpar-settings.sh"
+wget -q "$REPO_BASE/tulpar-daemon.desktop" -O "$TMP_DIR/tulpar-daemon.desktop"
+wget -q "$REPO_BASE/tulpar-settings.desktop" -O "$TMP_DIR/tulpar-settings.desktop"
+wget -q "$REPO_BASE/uninstall.sh" -O "$TMP_DIR/uninstall.sh"
+
+# Kurulum dizinine kopyala
+echo "Dosyalar kuruluyor..."
 sudo mkdir -p "$INSTALL_DIR"
-sudo cp tulpar-daemon.sh "$INSTALL_DIR/"
-sudo cp tulpar-settings.sh "$INSTALL_DIR/"
+sudo cp "$TMP_DIR/tulpar-daemon.sh" "$INSTALL_DIR/"
+sudo cp "$TMP_DIR/tulpar-settings.sh" "$INSTALL_DIR/"
+sudo cp "$TMP_DIR/uninstall.sh" "$INSTALL_DIR/"
 sudo chmod +x "$INSTALL_DIR/tulpar-daemon.sh"
 sudo chmod +x "$INSTALL_DIR/tulpar-settings.sh"
+sudo chmod +x "$INSTALL_DIR/uninstall.sh"
 
 # Config dizinini oluştur
 mkdir -p "$CONFIG_DIR"
@@ -60,10 +78,10 @@ echo "$USER" > "$CONFIG_DIR/.install_user"
 
 # Autostart dosyasını kopyala
 mkdir -p "$AUTOSTART_DIR"
-cp tulpar-daemon.desktop "$AUTOSTART_DIR/"
+cp "$TMP_DIR/tulpar-daemon.desktop" "$AUTOSTART_DIR/"
 
 # Masaüstü kısayolunu oluştur
-cp tulpar-settings.desktop "$DESKTOP_DIR/"
+cp "$TMP_DIR/tulpar-settings.desktop" "$DESKTOP_DIR/"
 chmod +x "$DESKTOP_DIR/tulpar-settings.desktop"
 
 echo ""

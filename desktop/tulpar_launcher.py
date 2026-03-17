@@ -126,8 +126,29 @@ class LauncherWindow(Gtk.Window):
             )
         return True
 
+    def _is_lock_running(self):
+        """tulpar_lock.py zaten çalışıyor mu kontrol et (PID lock dosyası)."""
+        import fcntl
+        lock_file = os.path.join(STATE_DIR, "tulpar_lock.pid")
+        try:
+            fd = open(lock_file, "r+")
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # Lock alınabildiyse çalışmıyor demek, serbest bırak
+            fcntl.flock(fd, fcntl.LOCK_UN)
+            fd.close()
+            return False
+        except (IOError, OSError):
+            return True
+        except FileNotFoundError:
+            return False
+
     def _on_lock(self, _btn):
         """Kilit ekranını başlat ve bu pencereyi kapat."""
+        if self._is_lock_running():
+            self.timer_label.set_markup(
+                '<span size="medium" color="#e67e22">Kilit ekranı zaten çalışıyor</span>'
+            )
+            return
         script_dir = os.path.dirname(os.path.abspath(__file__))
         lock_script = os.path.join(script_dir, "tulpar_lock.py")
         subprocess.Popen([sys.executable, lock_script])

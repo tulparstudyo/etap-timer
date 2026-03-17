@@ -101,12 +101,8 @@ TURNOFF_TIME=$new_turnoff
 EOF
 
 # Sistem geneli config'e de yaz (tüm kullanıcılar okuyabilsin)
-sudo mkdir -p /etc/tulpar 2>/dev/null
-sudo tee "$GLOBAL_CONFIG_FILE" > /dev/null << EOF
-SESSION_DURATION=$new_session
-IDLE_DURATION=$new_idle
-TURNOFF_TIME=$new_turnoff
-EOF
+global_content="SESSION_DURATION=${new_session}\nIDLE_DURATION=${new_idle}\nTURNOFF_TIME=${new_turnoff}"
+pkexec bash -c "mkdir -p /etc/tulpar && printf '%b\n' '$global_content' > '$GLOBAL_CONFIG_FILE' && chmod 644 '$GLOBAL_CONFIG_FILE'"
 
 echo "$(date '+%Y-%m-%d %H:%M:%S') - Ayarlar güncellendi: SESSION=$new_session IDLE=$new_idle TURNOFF=$new_turnoff" >> "$LOG_FILE"
 

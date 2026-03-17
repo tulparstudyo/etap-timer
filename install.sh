@@ -85,6 +85,7 @@ SESSION_DURATION=60
 IDLE_DURATION=10
 TURNOFF_TIME=23:00
 EOF
+sudo chmod 644 /etc/tulpar/tulpar.conf
 
 # Kurulumu yapan kullanıcıyı kaydet
 echo "$USER" > "$CONFIG_DIR/.install_user"

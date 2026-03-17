@@ -87,12 +87,17 @@ trap 'stop_overlay; rm -f "$LOCK_FILE" "$REMAINING_FILE"; exit 0' EXIT INT TERM
 mkdir -p "$CONFIG_DIR"
 
 load_config() {
+    # Önce değişkenleri temizle (eski değerlerin kalmaması için)
+    unset SESSION_DURATION IDLE_DURATION TURNOFF_TIME
+
     # Önce sistem geneli config'i oku (kurulumu yapan kullanıcının ayarları)
-    if [ -f "$GLOBAL_CONFIG_FILE" ]; then
+    if [ -f "$GLOBAL_CONFIG_FILE" ] && [ -r "$GLOBAL_CONFIG_FILE" ]; then
         source "$GLOBAL_CONFIG_FILE"
+    elif [ -f "$GLOBAL_CONFIG_FILE" ]; then
+        log_msg "UYARI: Global config okunamıyor: $GLOBAL_CONFIG_FILE"
     fi
     # Kullanıcıya özel config varsa üzerine yaz
-    if [ -f "$CONFIG_FILE" ]; then
+    if [ -f "$CONFIG_FILE" ] && [ -r "$CONFIG_FILE" ]; then
         source "$CONFIG_FILE"
     fi
     SESSION_DURATION="${SESSION_DURATION:-$DEFAULT_SESSION_DURATION}"

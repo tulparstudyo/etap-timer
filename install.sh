@@ -50,6 +50,7 @@ wget -q "$REPO_BASE/tulpar-daemon.sh" -O "$TMP_DIR/tulpar-daemon.sh"
 wget -q "$REPO_BASE/tulpar-settings.sh" -O "$TMP_DIR/tulpar-settings.sh"
 wget -q "$REPO_BASE/tulpar-daemon.desktop" -O "$TMP_DIR/tulpar-daemon.desktop"
 wget -q "$REPO_BASE/tulpar-settings.desktop" -O "$TMP_DIR/tulpar-settings.desktop"
+wget -q "$REPO_BASE/tulpar-overlay.sh" -O "$TMP_DIR/tulpar-overlay.sh"
 wget -q "$REPO_BASE/uninstall.sh" -O "$TMP_DIR/uninstall.sh"
 
 # Kurulum dizinine kopyala
@@ -57,9 +58,11 @@ echo "Dosyalar kuruluyor..."
 sudo mkdir -p "$INSTALL_DIR"
 sudo cp "$TMP_DIR/tulpar-daemon.sh" "$INSTALL_DIR/"
 sudo cp "$TMP_DIR/tulpar-settings.sh" "$INSTALL_DIR/"
+sudo cp "$TMP_DIR/tulpar-overlay.sh" "$INSTALL_DIR/"
 sudo cp "$TMP_DIR/uninstall.sh" "$INSTALL_DIR/"
 sudo chmod +x "$INSTALL_DIR/tulpar-daemon.sh"
 sudo chmod +x "$INSTALL_DIR/tulpar-settings.sh"
+sudo chmod +x "$INSTALL_DIR/tulpar-overlay.sh"
 sudo chmod +x "$INSTALL_DIR/uninstall.sh"
 
 # Config dizinini oluştur

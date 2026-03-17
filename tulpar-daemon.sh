@@ -14,43 +14,13 @@ DEFAULT_IDLE_DURATION=10
 DEFAULT_TURNOFF_TIME="23:00"
 
 CHECK_INTERVAL=30  # Kontrol aralığı (saniye)
-TRAY_PIPE="$CONFIG_DIR/.tray_pipe"
-TRAY_PID=""
+REMAINING_FILE="$CONFIG_DIR/.remaining"
 
 log_msg() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
 }
 
-# --- Tray fonksiyonları ---
-
-start_tray() {
-    rm -f "$TRAY_PIPE"
-    mkfifo "$TRAY_PIPE"
-    tail -f "$TRAY_PIPE" | yad --notification \
-        --image="preferences-system-time" \
-        --text="Tulpar başlatılıyor..." \
-        --command="bash /opt/tulpar/tulpar-settings.sh" \
-        --no-middle &
-    TRAY_PID=$!
-    log_msg "Tray ikonu başlatıldı (PID: $TRAY_PID)"
-}
-
-update_tray() {
-    local remaining_text="$1"
-    if [ -p "$TRAY_PIPE" ]; then
-        echo "tooltip:$remaining_text" > "$TRAY_PIPE" 2>/dev/null
-    fi
-}
-
-stop_tray() {
-    if [ -n "$TRAY_PID" ] && kill -0 "$TRAY_PID" 2>/dev/null; then
-        kill "$TRAY_PID" 2>/dev/null
-        wait "$TRAY_PID" 2>/dev/null
-    fi
-    rm -f "$TRAY_PIPE"
-}
-
-calc_remaining() {
+write_remaining() {
     local now=$1
     local remaining_session=$(( (SESSION_DURATION * 60) - (now - session_start) ))
 
@@ -73,13 +43,15 @@ calc_remaining() {
 
     local hours=$(( min_remaining / 3600 ))
     local mins=$(( (min_remaining % 3600) / 60 ))
-    local secs=$(( min_remaining % 60 ))
 
+    local text
     if [ "$hours" -gt 0 ]; then
-        echo "Kalan: ${hours}s ${mins}dk ($reason)"
+        text="⏱ ${hours}s ${mins}dk ($reason)"
     else
-        echo "Kalan: ${mins}dk ${secs}sn ($reason)"
+        text="⏱ ${mins} dk ($reason)"
     fi
+
+    echo "$text" > "$REMAINING_FILE"
 }
 
 # --- Single instance kontrolü ---
@@ -96,7 +68,7 @@ if [ -f "$LOCK_FILE" ]; then
 fi
 
 echo $$ > "$LOCK_FILE"
-trap 'stop_tray; rm -f "$LOCK_FILE"; exit 0' EXIT INT TERM
+trap 'rm -f "$LOCK_FILE" "$REMAINING_FILE"; exit 0' EXIT INT TERM
 
 # Config dizinini oluştur
 mkdir -p "$CONFIG_DIR"
@@ -118,11 +90,11 @@ log_msg "Tulpar daemon başlatıldı. SESSION=$SESSION_DURATION dk, IDLE=$IDLE_D
 session_start=$(date +%s)
 echo "$session_start" > "$SESSION_START_FILE"
 
-# Tray ikonunu başlat (yad varsa)
-if command -v yad &>/dev/null; then
-    start_tray
-else
-    log_msg "yad bulunamadı, tray ikonu devre dışı."
+# Masaüstü overlay'ini başlat
+OVERLAY_SCRIPT="/opt/tulpar/tulpar-overlay.sh"
+if [ -x "$OVERLAY_SCRIPT" ]; then
+    bash "$OVERLAY_SCRIPT" &
+    log_msg "Masaüstü sayacı başlatıldı."
 fi
 
 # --- Ana döngü ---
@@ -160,11 +132,8 @@ while true; do
         exit 0
     fi
 
-    # 4. Tray sayacını güncelle
-    if [ -n "$TRAY_PID" ] && kill -0 "$TRAY_PID" 2>/dev/null; then
-        remaining_text=$(calc_remaining "$now")
-        update_tray "$remaining_text"
-    fi
+    # 4. Kalan süreyi dosyaya yaz (overlay için)
+    write_remaining "$now"
 
     sleep "$CHECK_INTERVAL"
 done

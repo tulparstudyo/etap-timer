@@ -176,7 +176,7 @@
         table.style.display = 'table';
         tbody.innerHTML = users.map(u => `
           <tr>
-            <td data-label="E-posta">${u.email}</td>
+            <td data-label="Ad Soyad">${u.name}</td>
             <td data-label="Telefon">${u.phone}</td>
             <td data-label="Kilit Açma">
               <button class="toggle-btn ${u.has_unlock_permission ? 'toggle-on' : 'toggle-off'}"

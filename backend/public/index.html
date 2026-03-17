@@ -39,9 +39,9 @@
   <script>
     const token = sessionStorage.getItem('token');
     const user  = JSON.parse(sessionStorage.getItem('user') || '{}');
-    if (token && user.email) {
+    if (token && user.name) {
       document.getElementById('userMenu').style.display = 'block';
-      document.getElementById('greeting').textContent = `Hoş geldiniz, ${user.email}`;
+      document.getElementById('greeting').textContent = `Hoş geldiniz, ${user.name}`;
     } else {
       document.getElementById('guestMenu').style.display = 'flex';
     }

@@ -11,7 +11,7 @@
     <div class="card">
       <h2>👤 Profil Ayarları</h2>
       <form id="profileForm">
-        <input type="email" id="email" placeholder="E-posta" disabled>
+        <input type="text" id="name" placeholder="Ad Soyad" disabled>
         <input type="tel" id="phone" placeholder="Telefon" required>
 
         <label style="font-size:.85em;color:var(--gray);margin-bottom:-8px">İl</label>
@@ -38,7 +38,7 @@
     fetch(`${API_URL}/profile`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(u => {
-        document.getElementById('email').value = u.email || '';
+        document.getElementById('name').value = u.name || '';
         document.getElementById('phone').value = u.phone || '';
         document.getElementById('il').value = u.ilAdi || '';
         document.getElementById('ilce').value = u.ilceAdi || '';

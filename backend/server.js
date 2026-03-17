@@ -18,7 +18,7 @@ app.use(cors({
 app.use(express.json());
 
 // ─── Başarısız giriş denemesi takibi (brute-force koruması) ───
-const loginAttempts = new Map(); // key: email/code → { count, lockedUntil }
+const loginAttempts = new Map(); // key: phone/code → { count, lockedUntil }
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 dakika
 
@@ -112,39 +112,22 @@ const authenticate = (req, res, next) => {
 
 // REGISTER
 app.post('/register', async (req, res) => {
-  const { email, phone, institutionId } = req.body;
-  if (!email || !phone || !institutionId) {
+  const { name, phone, password, institutionId } = req.body;
+  if (!name || !phone || !password || !institutionId) {
     return res.status(400).json({ error: 'Tüm alanlar zorunlu' });
   }
   try {
-    // Otomatik şifre üret (8 karakter)
-    const plainPassword = crypto.randomBytes(4).toString('hex');
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
-    const [result] = await pool.query(
-      'INSERT INTO users (email, phone, institution_id, password) VALUES (?, ?, ?, ?)',
-      [email, phone, parseInt(institutionId), hashedPassword]
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await pool.query(
+      'INSERT INTO users (name, phone, institution_id, password) VALUES (?, ?, ?, ?)',
+      [name, phone, parseInt(institutionId), hashedPassword]
     );
 
-    // Kullanıcıya şifre emaili gönder
-    sendWelcomeEmail(email, plainPassword);
-
-    // Kuruma bildirim gönder
-    const [instRows] = await pool.query(
-      'SELECT name, phone AS inst_email FROM institutions WHERE id = ?',
-      [parseInt(institutionId)]
-    );
-    if (instRows[0]) {
-      sendInstitutionNotification(process.env.EMAIL_USER, email, email, instRows[0].name);
-    }
-
-    res.json({ message: 'Kayıt başarılı! Şifreniz e-posta adresinize gönderildi.' });
+    res.json({ message: 'Kayıt başarılı!' });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
-      if (err.message.includes('email')) {
-        return res.status(400).json({ error: 'Email zaten kayıtlı' });
-      }
       if (err.message.includes('phone') || err.message.includes('idx_phone')) {
-        return res.status(400).json({ error: 'Telefon zaten kayıtlı' });
+        return res.status(400).json({ error: 'Bu telefon numarası zaten kayıtlı' });
       }
       return res.status(400).json({ error: 'Bu bilgiler zaten kayıtlı' });
     }
@@ -155,35 +138,35 @@ app.post('/register', async (req, res) => {
 
 // LOGIN
 app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email gerekli' });
+  const { phone, password } = req.body;
+  if (!phone) return res.status(400).json({ error: 'Telefon numarası gerekli' });
 
-  const attempt = checkLoginAttempts(email);
+  const attempt = checkLoginAttempts(phone);
   if (!attempt.allowed) {
     return res.status(429).json({ error: `Çok fazla başarısız deneme. ${attempt.remaining} dakika sonra tekrar deneyin.` });
   }
 
   try {
-    const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    const [rows] = await pool.query('SELECT * FROM users WHERE phone = ?', [phone]);
     const user = rows[0];
     if (!user) {
-      recordFailedAttempt(email);
+      recordFailedAttempt(phone);
       return res.status(401).json({ error: 'Kullanıcı bulunamadı' });
     }
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
-      recordFailedAttempt(email);
+      recordFailedAttempt(phone);
       return res.status(401).json({ error: 'Şifre hatalı' });
     }
 
-    clearLoginAttempts(email);
+    clearLoginAttempts(phone);
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, phone: user.phone, name: user.name },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-    res.json({ token, user: { id: user.id, email: user.email } });
+    res.json({ token, user: { id: user.id, name: user.name, phone: user.phone } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Sunucu hatası' });
@@ -192,18 +175,17 @@ app.post('/login', async (req, res) => {
 
 // FORGOT PASSWORD
 app.post('/forgot-password', async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email gerekli' });
+  const { phone } = req.body;
+  if (!phone) return res.status(400).json({ error: 'Telefon numarası gerekli' });
   try {
-    const [rows] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
-    if (!rows[0]) return res.status(404).json({ error: 'Bu email ile kayıtlı kullanıcı bulunamadı' });
+    const [rows] = await pool.query('SELECT id FROM users WHERE phone = ?', [phone]);
+    if (!rows[0]) return res.status(404).json({ error: 'Bu telefon ile kayıtlı kullanıcı bulunamadı' });
 
     const newPassword = crypto.randomBytes(4).toString('hex');
     const hashed = await bcrypt.hash(newPassword, 10);
     await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashed, rows[0].id]);
 
-    await sendResetEmail(email, newPassword);
-    res.json({ message: 'Yeni şifreniz e-posta adresinize gönderildi.' });
+    res.json({ message: 'Yeni şifreniz oluşturuldu.', newPassword });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Sunucu hatası' });
@@ -214,7 +196,7 @@ app.post('/forgot-password', async (req, res) => {
 app.get('/profile', authenticate, async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT u.id, u.email, u.phone, u.institution_id AS institutionId,
+      `SELECT u.id, u.name, u.phone, u.institution_id AS institutionId,
               u.has_unlock_permission AS hasUnlockPermission,
               i.name AS institutionName, i.il_adi, i.ilce_adi
        FROM users u
@@ -226,7 +208,7 @@ app.get('/profile', authenticate, async (req, res) => {
     const row = rows[0];
     res.json({
       id: row.id,
-      email: row.email,
+      name: row.name,
       phone: row.phone,
       institutionId: row.institutionId,
       hasUnlockPermission: row.hasUnlockPermission,
@@ -249,7 +231,7 @@ app.put('/profile', authenticate, async (req, res) => {
       [phone || null, institutionId ? parseInt(institutionId) : null, req.user.userId]
     );
     const [rows] = await pool.query(
-      'SELECT id, email, phone, institution_id AS institutionId, has_unlock_permission AS hasUnlockPermission FROM users WHERE id = ?',
+      'SELECT id, name, phone, institution_id AS institutionId, has_unlock_permission AS hasUnlockPermission FROM users WHERE id = ?',
       [req.user.userId]
     );
     res.json(rows[0]);
@@ -433,7 +415,7 @@ app.get('/institution/email-to', authenticateInstitution, (req, res) => {
 app.get('/institution/users', authenticateInstitution, async (req, res) => {
   try {
     const [rows] = await pool.query(
-      'SELECT id, email, phone, has_unlock_permission, created_at FROM users WHERE institution_id = ? ORDER BY created_at DESC',
+      'SELECT id, name, phone, has_unlock_permission, created_at FROM users WHERE institution_id = ? ORDER BY created_at DESC',
       [req.institution.institutionId]
     );
     res.json(rows);

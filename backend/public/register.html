@@ -34,8 +34,9 @@
     <div class="card">
       <h2>Kayıt Ol</h2>
       <form id="registerForm">
-        <input type="email" id="email" placeholder="E-posta" required>
+        <input type="text" id="name" placeholder="Ad Soyad" required>
         <input type="tel" id="phone" placeholder="Telefon" required>
+        <input type="password" id="password" placeholder="Şifre" required minlength="6">
 
         <select id="il">
           <option value="">İl seçin...</option>
@@ -136,14 +137,15 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email: document.getElementById('email').value,
+            name: document.getElementById('name').value,
             phone: document.getElementById('phone').value,
+            password: document.getElementById('password').value,
             institutionId
           })
         });
         const data = await res.json();
         if (res.ok) {
-          msg.innerHTML = '<div class="msg msg-success">Kayıt başarılı! Şifreniz e-posta adresinize gönderildi. <a href="login.html">Giriş yapın</a></div>';
+          msg.innerHTML = '<div class="msg msg-success">Kayıt başarılı! <a href="login.html">Giriş yapın</a></div>';
           document.getElementById('registerForm').reset();
           $('#institution').val(null).trigger('change');
           ilceSel.innerHTML = '<option value="">Önce il seçin...</option>';

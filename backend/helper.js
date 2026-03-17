@@ -43,7 +43,8 @@ async function migrate() {
     await conn.query(`
       CREATE TABLE IF NOT EXISTS users (
         id                   INT AUTO_INCREMENT PRIMARY KEY,
-        email                VARCHAR(255) NOT NULL UNIQUE,
+        name                 VARCHAR(255) NOT NULL,
+        email                VARCHAR(255) NULL UNIQUE,
         phone                VARCHAR(50)  NOT NULL UNIQUE,
         institution_id       INT          NOT NULL,
         subject              VARCHAR(255),

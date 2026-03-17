@@ -11,7 +11,7 @@
     <div class="card">
       <h2>Giriş Yap</h2>
       <form id="loginForm">
-        <input type="email" id="email" placeholder="E-posta" required>
+        <input type="tel" id="phone" placeholder="Telefon" required>
         <input type="password" id="password" placeholder="Şifre" required>
         <button type="submit" class="btn btn-primary btn-full">Giriş Yap</button>
       </form>
@@ -38,7 +38,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
             password: document.getElementById('password').value
           })
         });

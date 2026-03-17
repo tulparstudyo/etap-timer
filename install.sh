@@ -1,5 +1,5 @@
 #!/bin/bash
-# Tulpar - Kurulum Scripti
+# Tulpar - Kurulum Scripti (v2)
 
 set -e
 

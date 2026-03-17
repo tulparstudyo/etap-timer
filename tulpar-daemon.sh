@@ -14,12 +14,76 @@ DEFAULT_IDLE_DURATION=10
 DEFAULT_TURNOFF_TIME="23:00"
 
 CHECK_INTERVAL=30  # Kontrol aralığı (saniye)
+TRAY_PIPE="$CONFIG_DIR/.tray_pipe"
+TRAY_PID=""
 
 log_msg() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
 }
 
-# Single instance kontrolü
+# --- Tray fonksiyonları ---
+
+start_tray() {
+    rm -f "$TRAY_PIPE"
+    mkfifo "$TRAY_PIPE"
+    tail -f "$TRAY_PIPE" | yad --notification \
+        --image="preferences-system-time" \
+        --text="Tulpar başlatılıyor..." \
+        --command="bash /opt/tulpar/tulpar-settings.sh" \
+        --no-middle &
+    TRAY_PID=$!
+    log_msg "Tray ikonu başlatıldı (PID: $TRAY_PID)"
+}
+
+update_tray() {
+    local remaining_text="$1"
+    if [ -p "$TRAY_PIPE" ]; then
+        echo "tooltip:$remaining_text" > "$TRAY_PIPE" 2>/dev/null
+    fi
+}
+
+stop_tray() {
+    if [ -n "$TRAY_PID" ] && kill -0 "$TRAY_PID" 2>/dev/null; then
+        kill "$TRAY_PID" 2>/dev/null
+        wait "$TRAY_PID" 2>/dev/null
+    fi
+    rm -f "$TRAY_PIPE"
+}
+
+calc_remaining() {
+    local now=$1
+    local remaining_session=$(( (SESSION_DURATION * 60) - (now - session_start) ))
+
+    local remaining_turnoff=999999
+    local turnoff_sec
+    turnoff_sec=$(date -d "$TURNOFF_TIME" +%s 2>/dev/null)
+    if [ -n "$turnoff_sec" ]; then
+        remaining_turnoff=$(( turnoff_sec - now ))
+        [ "$remaining_turnoff" -lt 0 ] && remaining_turnoff=0
+    fi
+
+    local min_remaining=$remaining_session
+    local reason="oturum"
+    if [ "$remaining_turnoff" -lt "$min_remaining" ]; then
+        min_remaining=$remaining_turnoff
+        reason="kapanma"
+    fi
+
+    [ "$min_remaining" -lt 0 ] && min_remaining=0
+
+    local hours=$(( min_remaining / 3600 ))
+    local mins=$(( (min_remaining % 3600) / 60 ))
+    local secs=$(( min_remaining % 60 ))
+
+    if [ "$hours" -gt 0 ]; then
+        echo "Kalan: ${hours}s ${mins}dk ($reason)"
+    else
+        echo "Kalan: ${mins}dk ${secs}sn ($reason)"
+    fi
+}
+
+# --- Single instance kontrolü ---
+
 if [ -f "$LOCK_FILE" ]; then
     existing_pid=$(cat "$LOCK_FILE")
     if kill -0 "$existing_pid" 2>/dev/null; then
@@ -31,9 +95,8 @@ if [ -f "$LOCK_FILE" ]; then
     fi
 fi
 
-# Lock dosyası oluştur
 echo $$ > "$LOCK_FILE"
-trap 'rm -f "$LOCK_FILE"; exit 0' EXIT INT TERM
+trap 'stop_tray; rm -f "$LOCK_FILE"; exit 0' EXIT INT TERM
 
 # Config dizinini oluştur
 mkdir -p "$CONFIG_DIR"
@@ -54,6 +117,15 @@ log_msg "Tulpar daemon başlatıldı. SESSION=$SESSION_DURATION dk, IDLE=$IDLE_D
 # Oturum başlangıç zamanı
 session_start=$(date +%s)
 echo "$session_start" > "$SESSION_START_FILE"
+
+# Tray ikonunu başlat (yad varsa)
+if command -v yad &>/dev/null; then
+    start_tray
+else
+    log_msg "yad bulunamadı, tray ikonu devre dışı."
+fi
+
+# --- Ana döngü ---
 
 while true; do
     load_config
@@ -86,6 +158,12 @@ while true; do
         log_msg "Kapanma saati geçti ($TURNOFF_TIME). Bilgisayar kapatılıyor."
         systemctl poweroff
         exit 0
+    fi
+
+    # 4. Tray sayacını güncelle
+    if [ -n "$TRAY_PID" ] && kill -0 "$TRAY_PID" 2>/dev/null; then
+        remaining_text=$(calc_remaining "$now")
+        update_tray "$remaining_text"
     fi
 
     sleep "$CHECK_INTERVAL"

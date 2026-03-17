@@ -34,6 +34,9 @@ fi
 if ! command -v xprintidle &>/dev/null; then
     missing_packages="$missing_packages xprintidle"
 fi
+if ! command -v yad &>/dev/null; then
+    missing_packages="$missing_packages yad"
+fi
 
 if [ -n "$missing_packages" ]; then
     echo "Eksik paketler kuruluyor:$missing_packages"

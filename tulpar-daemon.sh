@@ -108,6 +108,9 @@ log_msg "Tulpar daemon başlatıldı. SESSION=$SESSION_DURATION dk, IDLE=$IDLE_D
 session_start=$(date +%s)
 echo "$session_start" > "$SESSION_START_FILE"
 
+# İlk kalan süreyi hemen yaz (overlay "bekleniyor" göstermesin)
+write_remaining "$(date +%s)"
+
 # Masaüstü overlay'ini başlat
 OVERLAY_SCRIPT="/opt/tulpar/tulpar-overlay.sh"
 if [ -x "$OVERLAY_SCRIPT" ]; then

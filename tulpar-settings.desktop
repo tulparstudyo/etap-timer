@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name=Tulpar Timer
-Comment=Oturum ve kapatma ayarlarını düzenle
-Exec=bash /opt/tulpar/tulpar-settings.sh
-Icon=preferences-system-time
-Terminal=false
 Type=Application
+Name=Tulpar Ayarları
+Comment=Tulpar oturum ve kapatma ayarları
+Exec=/usr/local/bin/tulpar_settings.py
+Icon=preferences-system
+Terminal=false
 Categories=Settings;System;

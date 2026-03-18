@@ -1,10 +1,9 @@
 [Desktop Entry]
-Name=Tulpar Daemon
-Comment=Tulpar oturum ve kapatma yönetim servisi
-Exec=bash /opt/tulpar/tulpar-daemon.sh
-Icon=system-run
-Terminal=false
 Type=Application
-X-GNOME-Autostart-enabled=true
+Name=Tulpar Daemon
+Comment=Tulpar oturum ve kapatma zamanlayıcısı
+Exec=/usr/local/bin/tulpar_daemon.py
+Icon=preferences-system-time
+Terminal=false
 Hidden=false
-NoDisplay=true
+X-GNOME-Autostart-enabled=true

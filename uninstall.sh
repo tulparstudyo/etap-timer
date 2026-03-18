@@ -1,49 +1,37 @@
 #!/bin/bash
-# Tulpar - Kaldırma Scripti
+# Tulpar — Kaldırma Scripti
 
-INSTALL_DIR="/opt/tulpar"
-CONFIG_DIR="$HOME/.config/tulpar"
-AUTOSTART_DIR="$HOME/.config/autostart"
+set -e
 
-# Masaüstü dizinini belirle
-if [ -d "$HOME/Masaüstü" ]; then
-    DESKTOP_DIR="$HOME/Masaüstü"
-else
-    DESKTOP_DIR="$HOME/Desktop"
-fi
+INSTALL_DIR="/usr/local/bin"
+AUTOSTART_DIR="/etc/xdg/autostart"
+LOG_DIR="$HOME/.config/tulpar"
 
-echo "=== Tulpar Kaldırılıyor ==="
+echo "=== Tulpar Kaldırma ==="
 
 # Çalışan daemon'u durdur
-if [ -f "/tmp/tulpar-daemon-$USER.lock" ]; then
-    pid=$(cat "/tmp/tulpar-daemon-$USER.lock")
-    if kill -0 "$pid" 2>/dev/null; then
-        echo "Daemon durduruluyor (PID: $pid)..."
-        kill "$pid" 2>/dev/null
-    fi
-    rm -f "/tmp/tulpar-daemon-$USER.lock"
+if pgrep -f "tulpar_daemon.py" > /dev/null 2>&1; then
+    echo "Çalışan daemon durduruluyor..."
+    pkill -f "tulpar_daemon.py" || true
 fi
 
-# Kurulum dosyalarını kaldır
-if [ -d "$INSTALL_DIR" ]; then
-    echo "Kurulum dosyaları kaldırılıyor..."
-    sudo rm -rf "$INSTALL_DIR"
-fi
+# Dosyaları kaldır
+echo "Dosyalar kaldırılıyor..."
+sudo rm -f "$INSTALL_DIR/tulpar_daemon.py"
+sudo rm -f "$INSTALL_DIR/tulpar_settings.py"
 
-# Sistem geneli config'i kaldır
-sudo rm -rf /etc/tulpar
-
-# Autostart dosyasını kaldır (sistem geneli)
-sudo rm -f /etc/xdg/autostart/tulpar-daemon.desktop
-# Eski kullanıcı bazlı autostart dosyasını da temizle (varsa)
-rm -f "$AUTOSTART_DIR/tulpar-daemon.desktop"
+# Autostart kaldır
+sudo rm -f "$AUTOSTART_DIR/tulpar-daemon.desktop"
 
 # Masaüstü kısayolunu kaldır
+DESKTOP_DIR="$HOME/Masaüstü"
+if [ ! -d "$DESKTOP_DIR" ]; then
+    DESKTOP_DIR="$HOME/Desktop"
+fi
 rm -f "$DESKTOP_DIR/tulpar-settings.desktop"
 
-# Kullanıcıya config dosyasını sorma
-echo ""
-echo "Kullanıcı ayarları ($CONFIG_DIR) korundu."
-echo "Tamamen silmek için: rm -rf $CONFIG_DIR"
-echo ""
-echo "=== Tulpar başarıyla kaldırıldı ==="
+# Log dizinini kaldır
+rm -rf "$LOG_DIR"
+
+echo "Tulpar kaldırıldı."
+echo "Not: /etc/tulpar/tulpar.conf dosyası korundu. Silmek için: sudo rm -rf /etc/tulpar"

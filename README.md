@@ -68,7 +68,7 @@ sudo rm -rf /etc/tulpar
 
 ### Ayarlar
 
-Masaüstündeki **Tulpar Ayarları** kısayoluna tıklayarak ayarlar penceresini açın. Değerleri girin ve kaydedin. Kaydetme işlemi `pkexec` ile yetki isteyecektir.
+Masaüstündeki **Kapanma Ayarları** kısayoluna tıklayarak ayarlar penceresini açın. Değerleri girin ve kaydedin. Kaydetme işlemi `pkexec` ile yetki isteyecektir.
 
 | Ayar | Açıklama | Örnek |
 |------|----------|-------|

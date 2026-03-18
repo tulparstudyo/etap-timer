@@ -70,7 +70,7 @@ class SettingsWindow(Gtk.Window):
     """Tulpar ayarlar penceresi."""
 
     def __init__(self):
-        super().__init__(title="Tulpar Ayarları")
+        super().__init__(title="Kapanma Ayarları")
         self.set_default_size(360, 220)
         self.set_border_width(16)
         self.set_position(Gtk.WindowPosition.CENTER)

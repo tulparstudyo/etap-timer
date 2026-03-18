@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=Tulpar Ayarları
+Name=Kapanma Ayarları
 Comment=Tulpar oturum ve kapatma ayarları
 Exec=/usr/local/bin/tulpar_settings.py
 Icon=/usr/share/icons/tulpar.svg

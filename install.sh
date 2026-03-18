@@ -77,9 +77,6 @@ echo -e "${GREEN}Tulpar başarıyla kuruldu.${NC}"
 echo "Daemon bir sonraki oturum açılışında otomatik başlayacaktır."
 echo "Şimdi başlatmak için: $INSTALL_DIR/tulpar_daemon.py &"
 
-# İndirilen kurulum dosyalarını temizle
-if [ "$SCRIPT_DIR" != "$(pwd)" ] || [ -f "$SCRIPT_DIR/../tulpar.zip" ]; then
-    echo ""
-    echo "Kurulum dosyalarını temizlemek için:"
-    echo "  rm -rf $SCRIPT_DIR"
-fi
+# Kurulum dosyalarını otomatik temizle
+cd /
+rm -rf "$SCRIPT_DIR"

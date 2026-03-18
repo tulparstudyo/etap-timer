@@ -23,6 +23,9 @@ sudo rm -f "$INSTALL_DIR/tulpar_settings.py"
 # Autostart kaldır
 sudo rm -f "$AUTOSTART_DIR/tulpar-daemon.desktop"
 
+# İkon kaldır
+sudo rm -f /usr/share/icons/tulpar.svg
+
 # Masaüstü kısayolunu kaldır
 DESKTOP_DIR="$HOME/Masaüstü"
 if [ ! -d "$DESKTOP_DIR" ]; then

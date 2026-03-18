@@ -63,6 +63,9 @@ fi
 # Autostart (sistem geneli — tüm kullanıcılar için)
 sudo cp "$SCRIPT_DIR/tulpar-daemon.desktop" "$AUTOSTART_DIR/tulpar-daemon.desktop"
 
+# İkon kopyala
+sudo cp "$SCRIPT_DIR/tulpar.svg" /usr/share/icons/tulpar.svg
+
 # Masaüstü kısayolu
 DESKTOP_DIR="$HOME/Masaüstü"
 if [ ! -d "$DESKTOP_DIR" ]; then

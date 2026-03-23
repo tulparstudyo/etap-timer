@@ -11,6 +11,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
+VERSION = "1.0.0"
 CONFIG_PATH = "/etc/tulpar/tulpar.conf"
 
 DEFAULTS = {
@@ -108,6 +109,11 @@ class SettingsWindow(Gtk.Window):
         btn_save = Gtk.Button(label="Kaydet")
         btn_save.connect("clicked", self._on_save)
         grid.attach(btn_save, 0, 3, 2, 1)
+
+        # Versiyon bilgisi
+        lbl_version = Gtk.Label(label=f"Tulpar v{VERSION}")
+        lbl_version.set_opacity(0.5)
+        grid.attach(lbl_version, 0, 4, 2, 1)
 
         self.connect("destroy", Gtk.main_quit)
         self.show_all()

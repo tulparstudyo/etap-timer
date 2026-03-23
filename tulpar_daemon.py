@@ -28,6 +28,8 @@ DEFAULT_TURNOFF_TIME = ""      # HH:MM, boş = devre dışı
 CHECK_INTERVAL_SEC = 30        # ana döngü kontrol aralığı (saniye)
 DISPLAY_UPDATE_SEC = 10        # sayaç güncelleme aralığı (saniye)
 
+EXEMPT_USER = "etapadmin"      # bu kullanıcıda oturum/kapatma uygulanmaz
+
 
 # --- Logging ---
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -64,7 +66,11 @@ def read_config() -> dict:
                     if key in ("SESSION_DURATION", "IDLE_DURATION"):
                         config[key] = int(value) if value else 0
                     elif key == "TURNOFF_TIME":
-                        config[key] = value
+                        # Boş, "0" veya "00:00" ise devre dışı say
+                        if value in ("", "0", "00:00"):
+                            config[key] = ""
+                        else:
+                            config[key] = value
     except Exception as e:
         log.error("Konfigürasyon okuma hatası: %s", e)
     return config
@@ -293,6 +299,11 @@ class TulparDaemon:
 
     def _check_timers(self) -> bool:
         """Zamanlayıcıları kontrol eder. Aksiyon gerekirse çalıştırır."""
+        # Muaf kullanıcı kontrolü
+        current_user = os.environ.get("USER", "")
+        if current_user == EXEMPT_USER:
+            return True
+
         now_mono = time.monotonic()
 
         # SESSION_DURATION kontrolü

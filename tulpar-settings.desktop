@@ -3,6 +3,6 @@ Type=Application
 Name=Kapanma Ayarları
 Comment=Tulpar oturum ve kapatma ayarları
 Exec=/usr/local/bin/tulpar_settings.py
-Icon=/usr/share/icons/tulpar.svg
+Icon=/usr/share/icons/tulpar.png
 Terminal=false
 Categories=Settings;System;

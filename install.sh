@@ -64,7 +64,7 @@ fi
 sudo cp "$SCRIPT_DIR/tulpar-daemon.desktop" "$AUTOSTART_DIR/tulpar-daemon.desktop"
 
 # İkon kopyala
-sudo cp "$SCRIPT_DIR/tulpar.svg" /usr/share/icons/tulpar.svg
+sudo cp "$SCRIPT_DIR/tulpar.png" /usr/share/icons/tulpar.png
 
 # Masaüstü kısayolu
 DESKTOP_DIR="$HOME/Masaüstü"

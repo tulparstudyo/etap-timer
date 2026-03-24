@@ -11,7 +11,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 CONFIG_PATH = "/etc/tulpar/tulpar.conf"
 
 DEFAULTS = {

@@ -246,16 +246,38 @@ class TulparDaemon:
         self.running = True
         self.overlay = CountdownOverlay()
 
+        # TURNOFF_TIME sonrası başlatma kontrolü:
+        # Daemon, TURNOFF_TIME saatinden sonra başlatıldıysa (aynı gün)
+        # tüm zamanlayıcılar devre dışı kalır.
+        self.bypassed = False
+        tt = self.config["TURNOFF_TIME"]
+        if tt:
+            try:
+                now_dt = datetime.now()
+                target = datetime.strptime(tt, "%H:%M").replace(
+                    year=now_dt.year, month=now_dt.month, day=now_dt.day
+                )
+                if now_dt >= target:
+                    self.bypassed = True
+                    log.info(
+                        "Daemon TURNOFF_TIME (%s) sonrası başlatıldı, "
+                        "zamanlayıcılar devre dışı.",
+                        tt,
+                    )
+            except ValueError:
+                pass
+
         # Sinyal yakalama
         signal.signal(signal.SIGTERM, self._handle_signal)
         signal.signal(signal.SIGHUP, self._handle_signal)
         signal.signal(signal.SIGINT, self._handle_signal)
 
         log.info(
-            "Tulpar daemon başlatıldı. SESSION=%d dk, IDLE=%d dk, TURNOFF=%s",
+            "Tulpar daemon başlatıldı. SESSION=%d dk, IDLE=%d dk, TURNOFF=%s, bypassed=%s",
             self.config["SESSION_DURATION"],
             self.config["IDLE_DURATION"],
             self.config["TURNOFF_TIME"] or "devre dışı",
+            self.bypassed,
         )
 
     def _handle_signal(self, signum, frame):
@@ -266,6 +288,10 @@ class TulparDaemon:
 
     def _calc_remaining_seconds(self) -> tuple[int, str] | None:
         """Aktif sayaçlardan en yakın olanın kalan süresini ve kaynağını hesaplar."""
+        # Bypass modunda sayaç gösterme
+        if self.bypassed:
+            return None
+
         candidates = []
         now_mono = time.monotonic()
 
@@ -302,6 +328,10 @@ class TulparDaemon:
         # Muaf kullanıcı kontrolü
         current_user = os.environ.get("USER", "")
         if current_user == EXEMPT_USER:
+            return True
+
+        # TURNOFF_TIME sonrası başlatıldıysa tüm zamanlayıcılar devre dışı
+        if self.bypassed:
             return True
 
         now_mono = time.monotonic()

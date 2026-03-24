@@ -31,6 +31,7 @@ Masaüstünde bir kısayol ile ayarlar penceresi açılır. Aşağıdaki değerl
 - Oturum açılınca SESSION_DURATION sayacı başlar, süre dolunca oturum kapatılır
 - Kullanıcı işlem yapmazsa IDLE_DURATION sayacı çalışır, süre dolunca oturum kapatılır
 - Bilgisayar saati TURNOFF_TIME değerini geçerse bilgisayar sorgusuz ve onaysız kapanır
+- TURNOFF_TIME sonrası bypass: Daemon, TURNOFF_TIME saatinden sonra başlatıldıysa (aynı gün içinde, yani TURNOFF_TIME ile 23:59 arası) tüm zamanlayıcılar (SESSION_DURATION, IDLE_DURATION, TURNOFF_TIME) devre dışı kalır. Bu sayede kapatma saatinden sonra yapılan oturum açılışlarında kısıtlama uygulanmaz.
 
 ## Masaüstü Sayacı
 

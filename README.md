@@ -14,7 +14,7 @@ wget https://github.com/tulparstudyo/etap-timer/archive/refs/heads/main.zip -O t
 
 - **Oturum Süresi (SESSION_DURATION)** — Oturum açıldıktan sonra belirlenen dakika dolunca oturum kapatılır
 - **Boşta Kalma Süresi (IDLE_DURATION)** — Kullanıcı işlem yapmazsa belirlenen dakika sonunda oturum kapatılır
-- **Kapanma Saati (TURNOFF_TIME)** — Günün belirtilen saatinden (SS:DD) sonra bilgisayar otomatik kapanır
+- **Kapanma Saati (TURNOFF_TIME)** — Günün belirtilen saatinden (SS:DD) sonra bilgisayar otomatik kapanır. Kapanma saatinden sonra (örn. 16:30–23:59 arası) açılan oturumlarda tüm zamanlayıcılar devre dışı kalır
 - Masaüstünde kalan süreyi gösteren sürüklenebilir sayaç penceresi
 - Tüm kullanıcılar için otomatik başlatma (autostart)
 - Ayarlar sistem genelinde `/etc/tulpar/tulpar.conf` dosyasında saklanır

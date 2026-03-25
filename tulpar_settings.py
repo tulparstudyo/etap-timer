@@ -111,9 +111,25 @@ class SettingsWindow(Gtk.Window):
         grid.attach(btn_save, 0, 3, 2, 1)
 
         # Versiyon bilgisi
-        lbl_version = Gtk.Label(label=f"Tulpar v{VERSION}")
+        hbox_version = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        hbox_version.set_halign(Gtk.Align.CENTER)
+
+        lnk_source = Gtk.LinkButton.new_with_label(
+            "https://github.com/tulparstudyo/etap-timer",
+            "Kaynak Kodlara Git"
+        )
+        lnk_source.set_opacity(0.5)
+        hbox_version.pack_start(lnk_source, False, False, 0)
+
+        lbl_sep = Gtk.Label(label="|")
+        lbl_sep.set_opacity(0.5)
+        hbox_version.pack_start(lbl_sep, False, False, 0)
+
+        lbl_version = Gtk.Label(label=f"Tulpar Kilit v{VERSION}")
         lbl_version.set_opacity(0.5)
-        grid.attach(lbl_version, 0, 4, 2, 1)
+        hbox_version.pack_start(lbl_version, False, False, 0)
+
+        grid.attach(hbox_version, 0, 4, 2, 1)
 
         self.connect("destroy", Gtk.main_quit)
         self.show_all()

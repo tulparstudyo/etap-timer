@@ -113,7 +113,7 @@ def format_remaining(seconds: int) -> str:
     if seconds <= 0:
         return "00:00"
     hours = seconds // 3600
-    minutes = (seconds % 3600) // 60
+    minutes = (seconds % 3600)+1 // 60
     return f"{hours:02d}:{minutes:02d}"
 
 

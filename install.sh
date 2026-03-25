@@ -80,6 +80,10 @@ echo -e "${GREEN}Tulpar başarıyla kuruldu.${NC}"
 echo "Daemon bir sonraki oturum açılışında otomatik başlayacaktır."
 echo "Şimdi başlatmak için: $INSTALL_DIR/tulpar_daemon.py &"
 
+# Ayarlar penceresini arka planda aç
+echo "Ayarlar penceresi açılıyor..."
+nohup python3 "$INSTALL_DIR/tulpar_settings.py" >/dev/null 2>&1 &
+
 # Kurulum dosyalarını otomatik temizle
 cd /
 rm -rf "$SCRIPT_DIR"

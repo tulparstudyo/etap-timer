@@ -112,7 +112,7 @@ def format_remaining(seconds: int) -> str:
     """Kalan saniyeyi SS:DD formatına çevirir."""
     if seconds <= 0:
         return "00:00"
-    seconds = seconds + 1
+    seconds = seconds + 60
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
     return f"{hours:02d}:{minutes:02d}"
